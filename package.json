@@ -1,9 +1,12 @@
 {
   "name": "prueba-qa-automatizacion",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
+  "description": "Prueba práctica de automatización QA con Playwright, TypeScript y Page Object Model",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
