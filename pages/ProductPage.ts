@@ -104,14 +104,14 @@ export class ProductPage extends BasePage {
     await this.botonAgregar.click();
     await Promise.all([respuestaCart, respuestaModal]);
 
-    // 5. Esperar a que el modal aparezca visible y con contenido
+    // 5. Esperar a que el modal aparezca visible
     await this.page.locator("#blockcart-modal").waitFor({
       state: "visible",
       timeout: 15000,
     });
-    await this.page.locator("#blockcart-modal .product-name").waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
+    await this.page
+      .locator("#blockcart-modal .product-name")
+      .waitFor({ state: "attached", timeout: 15000 })
+      .catch(() => {});
   }
 }

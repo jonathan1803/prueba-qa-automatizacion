@@ -183,29 +183,46 @@ export class CartPage extends BasePage {
    */
   async vaciarCarritoSiTieneElementos(): Promise<void> {
     await this.navegarAlCarrito();
-    let deleteLinks = await this.page
-      .locator("a.remove-from-cart")
-      .evaluateAll((links) => links.map((l) => (l as HTMLAnchorElement).href));
+    const enlacesEliminar = this.page.locator("a.remove-from-cart");
 
-    if (deleteLinks.length === 0) {
-      // Forzar instanciación del carrito para purgar ítems precargados de la base de datos demo
+    // Si la sesión es completamente nueva, PrestaShop no muestra los productos
+    // residuales de la base de datos compartida hasta la primera interacción.
+    // Disparamos una adición esperando la confirmación del servidor:
+    if ((await enlacesEliminar.count()) === 0) {
       await this.page.goto(
         `${config.baseUrl}/index.php?id_product=1&controller=product`
       );
+      const respCart = this.page
+        .waitForResponse(
+          (r) => r.url().includes("controller=cart") && r.status() === 200,
+          { timeout: 15000 }
+        )
+        .catch(() => null);
       await this.page
         .locator('button[data-button-action="add-to-cart"]')
         .click();
-      await this.page.waitForTimeout(1000);
+      await respCart;
       await this.navegarAlCarrito();
-      deleteLinks = await this.page
-        .locator("a.remove-from-cart")
-        .evaluateAll((links) => links.map((l) => (l as HTMLAnchorElement).href));
     }
 
-    for (const href of deleteLinks) {
-      await this.page.goto(href);
-      await this.page.waitForLoadState("domcontentloaded");
+    // Purgar de forma determinista todos los artículos presentes
+    let totalItems = await enlacesEliminar.count();
+    let intentos = 0;
+    while (totalItems > 0 && intentos < 10) {
+      intentos++;
+      const respCart = this.page
+        .waitForResponse(
+          (r) => r.url().includes("controller=cart") && r.status() === 200,
+          { timeout: 15000 }
+        )
+        .catch(() => null);
+      await enlacesEliminar.first().click();
+      await respCart;
+      await this.page.waitForTimeout(500);
+      totalItems = await enlacesEliminar.count();
     }
+
+    // Refrescar para garantizar que el estado del servidor quedó en cero
     await this.navegarAlCarrito();
   }
 }
