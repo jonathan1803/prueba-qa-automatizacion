@@ -61,14 +61,20 @@ prueba-qa-automatizacion/
 │   ├── HomePage.ts
 │   ├── ProductPage.ts
 │   ├── CartModal.ts
-│   └── CartPage.ts
+│   ├── CartPage.ts
+│   └── LoginPage.ts
 ├── tests/
-│   └── cp01-busqueda-carrito.spec.ts
+│   ├── cp01-busqueda-carrito.spec.ts
+│   ├── cp02-carrito.spec.ts
+│   ├── cp03-busqueda-sin-resultados.spec.ts
+│   └── cp04-login-invalido.spec.ts
 ├── utils/
 │   └── precio.ts
 ├── test-results/
 ├── playwright-report/
 ├── evidencia/
+│   ├── screenshots/
+│   └── videos/
 └── node_modules/
 ```
 
@@ -76,35 +82,60 @@ prueba-qa-automatizacion/
 
 ### CP-01: Búsqueda de producto y agregar al carrito
 
-Este caso valida el flujo completo desde la búsqueda hasta el agregado del producto al carrito. Comprueba:
+Valida el flujo completo desde la búsqueda en la tienda hasta la confirmación de que el producto quedó en el carrito:
 
-- acceso a la página principal
-- búsqueda con sugerencias
-- selección del producto
-- validación del nombre y precio
-- cambio de dimensión cuando aplica
-- ajuste de cantidad
-- validación del modal del carrito
-- confirmación del contador de carrito
+- **Precondición (Aislamiento e independencia de pruebas):** Al tratarse de una tienda demo pública y multi-usuario (`teststore.automationtesting.co.uk`), la base de datos de PrestaShop asocia artículos residuales al tráfico compartido (por ejemplo, 2 camisetas precargadas). Para cumplir el principio de **independencia de pruebas** exigido en el examen, se implementó `vaciarCarritoSiTieneElementos()` en `CartPage`, el cual purga de forma determinista cualquier ítem remanente antes de iniciar el flujo, asegurando que el carrito arranque en cero y que la aserción final de 3 artículos sea 100% confiable y reproducible.
+- **Paso 1:** Apertura del navegador y navegación a la URL base; verificación del título de la tienda.
+- **Paso 2:** Búsqueda predictiva con el término `"best"`; verificación de sugerencias desplegadas.
+- **Paso 3:** Selección del producto *"The best is yet to come' Framed poster"* desde el autocompletado y validación de llegada a la página de detalle.
+- **Paso 4:** Verificación del nombre y precio del producto.
+- **Paso 5:** Desplazamiento (scroll) hacia la sección de descripción para comprobar visibilidad y lectura.
+- **Paso 6:** Selección de una dimensión distinta a la predeterminada (`Dimension: 60x90cm`) y verificación de actualización de precio.
+- **Paso 7:** Modificación de cantidad a 3 unidades con comprobación de valor en el campo.
+- **Paso 8:** Agregado al carrito y validación reactiva del modal de confirmación (nombre del producto, cantidad 3 y subtotal igual a precio unitario × 3).
+- **Paso 9:** Clic en *"Continue shopping"*, cierre de la ventana modal y confirmación de que el contador del encabezado refleja exactamente 3 artículos.
 
 ### CP-02: Validación y modificación del carrito
 
-Caso previsto para validar la edición del carrito, como cambiar cantidad de artículos, eliminar productos o comprobar subtotales y totales. En esta entrega aún no está automatizado.
+Valida que el carrito calcula correctamente los precios y responde a las acciones de modificación del usuario de forma independiente:
 
-### CP-03: Búsqueda sin resultados
+- **Preparación de estado:** Ejecuta su propia limpieza previa para no depender de la ejecución de CP-01.
+- **Agregado e ingreso:** Agrega 3 unidades del producto y navega a la vista completa del carrito (`controller=cart&action=show`).
+- **Verificación de línea:** Valida consistencia matemática de la fila: `total = precio unitario × cantidad`.
+- **Modificación de cantidad:** Reduce la cantidad del producto de 3 a 1 mediante los controles nativos de PrestaShop y comprueba el recálculo inmediato del total de la línea.
+- **Eliminación y vaciado:** Elimina el producto del carrito y valida que el aviso de carrito vacío sea visible y el contador del encabezado vuelva a `(0)`.
 
-Caso previsto para validar el comportamiento al buscar un término que no exista, verificando mensajes de "sin resultados" y evitando falsos positivos en la prueba. En esta entrega aún no está automatizado.
+### CP-03: Búsqueda sin resultados (caso negativo)
 
-### CP-04: Inicio de sesión inválido
+Verifica el comportamiento y la resiliencia del sistema ante búsquedas sin coincidencias en el catálogo:
 
-Caso previsto para verificar el flujo de autenticación con credenciales incorrectas, comprobando los mensajes de error y la permanencia en la pantalla de login. En esta entrega aún no está automatizado.
+- **Búsqueda inexistente:** Ingresa el término `"xyzqw123"` en el buscador y presiona Enter.
+- **Doble condición de validación:** Confirma que la lista de productos encontrados tenga 0 resultados (`article.product-miniature`) y que se muestren los mensajes oficiales de PrestaShop: *"No matches were found for your search"* y *"Please try other keywords to describe what you are looking for."*.
+
+### CP-04: Inicio de sesión con credenciales inválidas (caso negativo)
+
+Verifica el manejo de errores de autenticación y la seguridad de la sesión:
+
+- **Ingreso al formulario:** Navega a la pantalla de autenticación y valida la presencia de los campos de correo y contraseña.
+- **Envío con datos inválidos:** Ingresa un correo con formato válido pero inexistente (`qa.candidato@example.com`) y envía el formulario.
+- **Validación de error y permanencia:** Comprueba la alerta de error de autenticación (*"Authentication failed."*) y valida que el usuario permanezca sin autenticar manteniendo visible el botón de iniciar sesión (*"Sign in"*).
 
 ## 7. Ejecución de las pruebas
 
 Desde la raíz del proyecto, se pueden ejecutar las pruebas con los siguientes comandos:
 
 ```bash
+# Ejecutar toda la suite de pruebas (CP-01 a CP-04)
 npm test
+```
+
+Ejecución de un caso específico:
+
+```bash
+npx playwright test tests/cp01-busqueda-carrito.spec.ts
+npx playwright test tests/cp02-carrito.spec.ts
+npx playwright test tests/cp03-busqueda-sin-resultados.spec.ts
+npx playwright test tests/cp04-login-invalido.spec.ts
 ```
 
 Ejecución con navegador visible:
@@ -113,53 +144,58 @@ Ejecución con navegador visible:
 npm run test:headed
 ```
 
-Abrir el reporte de Playwright:
+Abrir el reporte interactivo de Playwright:
 
 ```bash
 npm run report
 ```
 
-También se puede ejecutar la interfaz visual de Playwright:
+También se puede ejecutar la interfaz visual interactiva de Playwright:
 
 ```bash
- npx playwright test --ui
+npx playwright test --ui
 ```
 
 ## 8. Decisiones técnicas
 
 ### ¿Por qué elegí Playwright?
 
-Porque ofrece una solución robusta para automatización web con soporte nativo para esperas inteligentes, capturas de pantalla, trazas, ejecución multi-navegador y un reporte muy útil para depuración y evidencias.
+Porque ofrece una solución robusta para automatización web con soporte nativo para esperas inteligentes automáticas (auto-waiting), aislamiento de contexto por prueba, capturas de pantalla, grabación de trazas (trace viewer), ejecución multi-navegador y un reporte HTML detallado para auditoría de evidencias.
 
-### ¿Qué problema resuelve el patrón POM?
+### ¿Qué problema resuelve el patrón POM (Page Object Model)?
 
-El patrón POM encapsula los selectores, acciones y validaciones por página para evitar duplicar lógica en cada prueba y facilitar el mantenimiento del código cuando cambian los elementos de la interfaz.
+El patrón POM desacopla los localizadores y las interacciones de la interfaz de la lógica de validación de las pruebas. Si un selector o flujo de la página cambia en el futuro, solo se actualiza en la clase de página correspondiente (`pages/`), manteniendo los archivos de prueba (`tests/`) limpios, legibles y mantenibles.
 
 ### ¿Por qué las aserciones están en las pruebas?
 
-Porque las pruebas deben validar el comportamiento observable del sistema. Si la aserción se mueve demasiado hacia la lógica interna, el automatizador deja de representar el comportamiento real del usuario.
+Siguiendo las mejores prácticas estrictas de Page Object Model, las clases de página solo deben exponer acciones y métodos para consultar el estado de la UI (sin aserciones duras internas). Todas las aserciones (`expect`) residen en los archivos de prueba (`tests/`), permitiendo que el flujo de verificación y los criterios de aceptación sean explícitos.
 
 ### ¿Cómo evito depender de precios fijos?
 
-Se utilizan utilidades para parsear y normalizar precios, evitando comparaciones directas con valores hardcodeados. Esto hace que la prueba sea más estable ante cambios de precios o configuraciones regionales.
+Se creó el módulo auxiliar [utils/precio.ts](utils/precio.ts) para extraer numéricamente los importes (`parsearPrecio`) y redondear con precisión (`redondear`). Los precios y totales esperados se calculan dinámicamente en tiempo de ejecución (`precioUnitario * cantidad`), haciendo las pruebas inmunes a variaciones de catálogo o descuentos del entorno.
 
-### ¿Cómo garantizo que CP-02 sea independiente de CP-01?
+### ¿Por qué se implementó la limpieza previa del carrito (`vaciarCarritoSiTieneElementos`)?
 
-Cada caso debe prepararse con su propio estado inicial y no depender del contenido dejado por otra prueba. Esto se logra con datos controlados, navegación limpia y validaciones que no asuman que un caso anterior ya modificó el estado del sitio.
+Uno de los principios esenciales de QA Automation es que **ninguna prueba debe depender del estado de ejecuciones previas ni de datos residuales de terceros**. Al interactuar con una tienda demo pública (`teststore.automationtesting.co.uk`), la base de datos almacena carritos huérfanos. Para evitar falsos negativos en los contadores, `vaciarCarritoSiTieneElementos()` inspecciona los enlaces nativos de eliminación (`controller=cart&delete=1...`) y purga la sesión directamente a nivel de servidor, garantizando que el carrito arranque en 0 artículos.
 
-### ¿Cómo investigo una prueba fallida?
+### ¿Cómo se resolvieron las condiciones de carrera con peticiones asíncronas de PrestaShop?
 
-Reviso el error en la salida del navegador, analizo el trace, reviso los screenshots y el contexto de la ejecución, y comparo el flujo real contra la lógica esperada del Page Object. En Playwright esto suele resolver rápidamente la causa raíz del problema.
+Al seleccionar dimensiones o agregar al carrito, PrestaShop dispara peticiones AJAX en segundo plano (`controller=product` y `ps_shoppingcart`) que reconstruyen partes del DOM. Para evitar pruebas frágiles ("flaky tests"):
+1. En `ProductPage` se espera activamente la resolución de las peticiones AJAX antes de interactuar con el siguiente elemento.
+2. En las pruebas se utilizan aserciones reactivas de Playwright (`await expect(locator).toContainText(...)`) con reintento automático en lugar de lecturas síncronas instantáneas.
 
 ## 9. Evidencias de ejecución
 
-La carpeta [playwright-report](playwright-report) contiene el reporte HTML generado por Playwright, mientras que [test-results](test-results) almacena resultados de ejecución, traces y contexto de errores para cada prueba. Estas evidencias sirven como respaldo para auditoría, revisión de fallas y documentación del estado del proyecto.
+Siguiendo las pautas del apartado **6.2 del documento de evaluación**, se organizó la carpeta [evidencia](evidencia) para presentar los respaldos visuales de las pruebas directamente en el repositorio:
 
-## 10. Limitaciones y observaciones
+- **[evidencia/screenshots/](evidencia/screenshots/):** Capturas de pantalla del estado final exitoso de cada uno de los casos (`cp01`, `cp02`, `cp03`, `cp04`).
+- **[evidencia/videos/](evidencia/videos/):** Grabaciones en video (`.webm`) de la ejecución completa y automatizada en el navegador para cada flujo.
+- El reporte interactivo completo de Playwright puede generarse y visualizarse localmente en cualquier momento mediante `npm run report`.
 
-- El proyecto está orientado a una práctica educativa y de automatización web.
-- El caso CP-01 está implementado y validado; los demás escenarios aparecen como casos de extensión para la siguiente iteración.
-- El uso de datos dinámicos y de comercio electrónico puede requerir ajustes si el sitio cambia su estructura o textos.
-- Las pruebas deben ejecutarse en un entorno estable y con acceso a la URL objetivo para evitar falsos negativos por disponibilidad del sitio.
+## 10. Observaciones finales
+
+- Los **4 casos de prueba requeridos (CP-01, CP-02, CP-03 y CP-04)** se encuentran **100% implementados, documentados y pasando satisfactoriamente**.
+- Se respetó estrictamente la estructura de directorios (`pages/`, `tests/`, `fixtures/`, `utils/`) solicitada en la guía de evaluación.
+- El proyecto está configurado para ejecutarse de manera autónoma en cualquier entorno con Node.js 18+.
 
 

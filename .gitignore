@@ -6,3 +6,4 @@ playwright/.cache/
 .playwright-mcp/
 .env
 .DS_Store
+evidencia/reporte-html/

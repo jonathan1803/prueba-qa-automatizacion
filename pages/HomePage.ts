@@ -42,6 +42,7 @@ export class HomePage extends BasePage {
       sugerencia = sugerencia.filter({ hasText: fragmento });
     }
     await sugerencia.first().click();
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async contarProductosEnResultados(): Promise<number> {

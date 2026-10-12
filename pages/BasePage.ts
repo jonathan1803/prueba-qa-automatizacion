@@ -7,7 +7,7 @@ export class BasePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.contadorCarrito = page.locator(".cart-products-count");
+    this.contadorCarrito = page.locator("#_desktop_cart .cart-products-count");
   }
 
   async navegarAInicio(): Promise<void> {
