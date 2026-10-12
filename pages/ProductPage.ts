@@ -79,7 +79,7 @@ export class ProductPage extends BasePage {
       .waitForFunction(() => {
         return Boolean((window as any).prestashop);
       }, { timeout: 5000 })
-      .catch(() => {});
+      .catch(() => { });
 
     // 2. Asegurar que el botón esté visible y habilitado
     await this.botonAgregar.waitFor({ state: "visible", timeout: 10000 });
@@ -112,6 +112,6 @@ export class ProductPage extends BasePage {
     await this.page
       .locator("#blockcart-modal .product-name")
       .waitFor({ state: "attached", timeout: 15000 })
-      .catch(() => {});
+      .catch(() => { });
   }
 }
