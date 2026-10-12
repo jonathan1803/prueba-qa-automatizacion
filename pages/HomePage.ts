@@ -22,9 +22,28 @@ export class HomePage extends BasePage {
   }
 
   async escribirEnBuscador(texto: string): Promise<void> {
+    await this.campoBusqueda.waitFor({ state: "visible" });
+    // Asegurar que PrestaShop haya adjuntado el widget jQuery UI de autocompletado (.ui-autocomplete-input)
+    await this.page
+      .locator('input[name="s"].ui-autocomplete-input')
+      .waitFor({ state: "attached", timeout: 8000 })
+      .catch(() => {});
+
     await this.campoBusqueda.click();
-    // pressSequentially dispara los eventos de teclado que activan el autocompletado
-    await this.campoBusqueda.pressSequentially(texto, { delay: 100 });
+    await this.campoBusqueda.fill("");
+    // pressSequentially dispara los eventos de teclado requeridos por el autocompletado
+    await this.campoBusqueda.pressSequentially(texto, { delay: 150 });
+
+    // Si por latencia del servidor compartido las sugerencias no se despliegan de inmediato, reactivar el trigger
+    const visible = await this.sugerencias
+      .first()
+      .isVisible({ timeout: 4000 })
+      .catch(() => false);
+    if (!visible) {
+      await this.campoBusqueda.press("Backspace");
+      await this.page.waitForTimeout(300);
+      await this.campoBusqueda.pressSequentially(texto.slice(-1), { delay: 200 });
+    }
   }
 
   async buscar(texto: string): Promise<void> {

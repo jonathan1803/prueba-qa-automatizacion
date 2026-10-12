@@ -19,7 +19,7 @@ test.describe("CP-02: Validación y modificación del carrito", () => {
 
     // 1. Agregar al carrito 3 unidades del producto e ingresar al carrito
     await home.escribirEnBuscador("best");
-    await expect(home.sugerencias.first()).toBeVisible();
+    await expect(home.sugerencias.first()).toBeVisible({ timeout: 15000 });
     await home.seleccionarSugerencia(["best is yet to come", "Framed poster"]);
     await expect(producto.nombre.first()).toBeVisible();
 

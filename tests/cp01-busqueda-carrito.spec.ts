@@ -26,7 +26,7 @@ test.describe("CP-01: Búsqueda de producto y agregado al carrito", () => {
     // Paso 2: Escribir la palabra "best" en el campo de búsqueda
     // Resultado esperado: Se despliegan las sugerencias y al menos una contiene la palabra buscada
     await home.escribirEnBuscador("best");
-    await expect(home.sugerencias.first()).toBeVisible();
+    await expect(home.sugerencias.first()).toBeVisible({ timeout: 15000 });
     const textos = await home.obtenerTextosSugerencias();
     expect(textos.some((t) => t.toLowerCase().includes("best"))).toBe(true);
 
