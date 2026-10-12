@@ -125,9 +125,11 @@ Verifica el manejo de errores de autenticación y la seguridad de la sesión:
 Desde la raíz del proyecto, se pueden ejecutar las pruebas con los siguientes comandos:
 
 ```bash
-# Ejecutar toda la suite de pruebas (CP-01 a CP-04)
+# Ejecutar toda la suite de pruebas (CP-01 a CP-04), se ejecutan las pruebas en consola y genera un reporte HTML. despues de npm test, ejecuta el comando que aparece en consola para ver el reporte.
 npm test
 ```
+
+
 
 Ejecución de un caso específico:
 
