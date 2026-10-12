@@ -11,9 +11,9 @@ export class ProductPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.nombre = page.locator("h1"); // verificar
-    this.precio = page.locator('.current-price [itemprop="price"]'); // verificar
-    this.selectorDimension = page.locator('select[name="group_3"]'); // verificar
+    this.nombre = page.locator("h1");
+    this.precio = page.locator(".current-price-value");
+    this.selectorDimension = page.locator('select[name="group_3"]');
     this.campoCantidad = page.locator("#quantity_wanted");
     this.botonAgregar = page.getByRole("button", { name: "Add to cart" });
     this.seccionDescripcion = page.locator("#description"); // verificar
